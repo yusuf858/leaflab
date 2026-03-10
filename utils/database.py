@@ -51,8 +51,10 @@ def init_db() -> bool:
         return False
     try:
         with conn.cursor() as cur:
-            cur.execute("CREATE DATABASE IF NOT EXISTS leaflab_db CHARACTER SET utf8mb4")
-            cur.execute("USE leaflab_db")
+            # Do NOT run CREATE DATABASE or USE — Filess.io (and most shared
+            # MySQL hosts) pre-create the database and forbid these commands.
+            # _get_connection() already connects to the correct database
+            # via DB_CONFIG["database"] / the DB_NAME env var.
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS analysis_log (
                     id              INT AUTO_INCREMENT PRIMARY KEY,
