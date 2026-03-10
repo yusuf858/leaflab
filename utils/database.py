@@ -374,17 +374,19 @@ def seed_synthetic_samples() -> int:
 
     inserted = 0
     try:
+        # Use executemany for a single round-trip instead of 120 individual calls
+        # This prevents proxy timeouts on shared/remote DB hosts (e.g. Filess.io)
+        cols = list(samples[0].keys())
+        col_names = ",".join(cols)
+        placeholders = ",".join(["%s"] * len(cols))
+        all_vals = [list(s.values()) for s in samples]
+
         with conn.cursor() as cur:
-            for s in samples:
-                cols = list(s.keys())
-                vals = list(s.values())
-                placeholders = ",".join(["%s"] * len(cols))
-                col_names = ",".join(cols)
-                cur.execute(
-                    f"INSERT INTO training_samples ({col_names}) VALUES ({placeholders})",
-                    vals
-                )
-                inserted += 1
+            cur.executemany(
+                f"INSERT INTO training_samples ({col_names}) VALUES ({placeholders})",
+                all_vals
+            )
+            inserted = len(all_vals)
         conn.commit()
         conn.close()
     except Exception as e:
